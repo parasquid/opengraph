@@ -10,7 +10,10 @@ module OpenGraph
   # Pass <tt>false</tt> for the second argument if you want to
   # see invalid (i.e. missing a required attribute) data.
   def self.fetch(uri, strict = true)
-    parse(HTTParty.get(uri).body, strict)
+    html = HTTParty.get(uri)
+    page = parse(html.body, strict)
+    page['url'] = html.request.last_uri.to_s unless page.include? 'url'
+    page
   rescue SocketError => e
     raise e
   end
