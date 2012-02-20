@@ -1,6 +1,6 @@
 require 'hashie'
 require 'nokogiri'
-require 'restclient'
+require 'httparty'
 
 module OpenGraph
   # Fetch Open Graph data from the specified URI. Makes an
@@ -10,11 +10,11 @@ module OpenGraph
   # Pass <tt>false</tt> for the second argument if you want to
   # see invalid (i.e. missing a required attribute) data.
   def self.fetch(uri, strict = true)
-    parse(RestClient.get(uri).body, strict)
-  rescue RestClient::Exception, SocketError
-    false
+    parse(HTTParty.get(uri).body, strict)
+  rescue SocketError => e
+    raise e
   end
-  
+
   def self.parse(html, strict = true)
     doc = Nokogiri::HTML.parse(html)
     page = OpenGraph::Object.new
@@ -27,7 +27,7 @@ module OpenGraph
     return false unless page.valid? if strict
     page
   end
-  
+
   TYPES = {
     'activity' => %w(activity sport),
     'business' => %w(bar company cafe hotel restaurant),
@@ -38,38 +38,38 @@ module OpenGraph
     'product' => %w(album book drink food game movie product song tv_show),
     'website' => %w(blog website)
   }
-  
+
   # The OpenGraph::Object is a Hash with method accessors for
   # all detected Open Graph attributes.
   class Object < Hashie::Mash
     MANDATORY_ATTRIBUTES = %w(title type image url)
-    
+
     # The object type.
     def type
       self['type']
     end
-    
+
     # The schema under which this particular object lies. May be any of
     # the keys of the TYPES constant.
     def schema
-      OpenGraph::TYPES.each_pair do |schema, types| 
+      OpenGraph::TYPES.each_pair do |schema, types|
         return schema if types.include?(self.type)
       end
       nil
     end
-    
+
     OpenGraph::TYPES.values.flatten.each do |type|
       define_method "#{type}?" do
         self.type == type
       end
     end
-    
+
     OpenGraph::TYPES.keys.each do |scheme|
       define_method "#{scheme}?" do
         self.type == scheme || OpenGraph::TYPES[scheme].include?(self.type)
       end
     end
-    
+
     # If the Open Graph information for this object doesn't contain
     # the mandatory attributes, this will be <tt>false</tt>.
     def valid?
