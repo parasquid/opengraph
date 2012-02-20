@@ -23,6 +23,7 @@ module OpenGraph
         page[$1.gsub('-','_')] = m.attribute('content').to_s
       end
     end
+    page[:nokogiri_parsed_document] = doc
     page
   end
 
