@@ -75,7 +75,7 @@ module OpenGraph
     # If the Open Graph information for this object doesn't contain
     # the mandatory attributes, this will be <tt>false</tt>.
     def valid?
-      MANDATORY_ATTRIBUTES.each{|a| return false unless self[a]}
+      MANDATORY_ATTRIBUTES.each{|a| return false unless (self[a] && !self[a].empty?)}
       true
     end
   end
